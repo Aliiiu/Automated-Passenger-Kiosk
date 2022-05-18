@@ -1,0 +1,18 @@
+glob
+os
+datetime
+pandas
+azure.core.credentials import AzureKeyCredential
+azure.ai.formrecognizer import FormRecognizerClient
+
+azure.core.exceptions import ResourceNotFoundError
+azure.ai.formrecognizer import FormTrainingClient
+
+azure.cognitiveservices.vision.face import FaceClient
+azure.cognitiveservices.vision.face.models import TrainingStatusType
+msrest.authentication import CognitiveServicesCredentials
+
+azure.cognitiveservices.vision.customvision.training import CustomVisionTrainingClient
+azure.cognitiveservices.vision.customvision.prediction import CustomVisionPredictionClient
+azure.cognitiveservices.vision.customvision.training.models import ImageFileCreateBatch, ImageFileCreateEntry, Region
+msrest.authentication import ApiKeyCredentials

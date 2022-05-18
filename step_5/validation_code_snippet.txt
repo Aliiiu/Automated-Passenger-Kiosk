@@ -1,0 +1,129 @@
+manifest = pd.read_csv('FlightManifest.csv', index_col='Last Name')
+manifest.head(10)
+
+total_cols = manifest.columns.to_list()
+unwanted = ['Passanger Name', 'First Name', 'Sex', 'Carrier ', 'DateofBirth',
+ 'DoBValidation', 'Gate', 
+ 'PersonValidation',
+ 'LuggageValidation',
+ 'NameValidation',
+ 'BoardingPassValidation']
+checks = [ele for ele in total_cols if ele not in unwanted]
+
+local_path = 'documents'
+
+def check_person_validation(full_name, full_names):
+    file_names = [file for file in glob.glob(local_path + '/*.png') if file.__contains__(full_name) and file.__contains__('ca-dl')]
+    file_name = file_names[0]
+    with open(file_name, "rb") as image_contents:
+            id_content = form_recognizer_client.begin_recognize_identity_documents(image_contents.read())
+            collected_id_cards = id_content.result()
+            id_content = collected_id_cards[0]
+            first_name_id = id_content.fields.get('FirstName').value
+            last_name_id = id_content.fields.get("LastName").value
+            person_name_id = first_name_id +" "+ last_name_id
+    passes = [file for file in glob.glob(local_path + '/*.pdf') if file .__contains__(full_name)]
+    boarding_pass = passes[0]
+    with open(boarding_pass, "rb") as pass_content:
+            custom_test_action = form_recognizer_client.begin_recognize_custom_forms(model_id=custom_model_info.model_id, form=pass_content.read())
+            recognized_content = custom_test_action.result()[0]
+            name_pass = recognized_content.fields.get("Passenger Name").value
+    
+    return full_names == person_name_id and full_names == name_pass
+
+
+def check_dob_validation(full_name, dob):
+    file_names = [file for file in glob.glob(local_path + '/*.png') if file.__contains__(full_name) and file.__contains__('ca-dl')]
+    file_name = file_names[0]
+    with open(file_name, "rb") as image_contents:
+            id_content = form_recognizer_client.begin_recognize_identity_documents(image_contents.read())
+            collected_id_cards = id_content.result()
+            id_content = collected_id_cards[0]
+            dob_id = id_content.fields.get('DateOfBirth').value.strftime("%d-%b-%y")
+    
+    return dob_id == dob
+def check_boarding_validation(full_name, df, checks, name):
+    passes = [file for file in glob.glob(local_path + '/*.pdf') if file .__contains__(full_name)]
+    boarding_pass = passes[0]
+    with open(boarding_pass, "rb") as pass_content:
+        custom_test_action = form_recognizer_client.begin_recognize_custom_forms(model_id=custom_model_info.model_id, form=pass_content.read())
+        recognized_content = custom_test_action.result()[0]
+        status = []
+
+        for item in checks:
+            item_pass_check = recognized_content.fields[item].value
+            item_manifest_check = str(manifest.loc[name][item])
+            if item == 'Class':
+                status.append(item_manifest_check.startswith(item_pass_check))
+            elif item == 'Date':
+                item_pass_check = datetime.strptime(item_pass_check, "%B %d, %Y")
+                item_pass_check = item_pass_check.strftime("%d-%b-%y")
+                status.append(item_manifest_check == item_pass_check)
+            elif item == 'Baggage':
+                status.append(item_pass_check.title().__contains__(item_manifest_check))
+            elif item == 'Ticket No.':
+                status.append(item_pass_check.__contains__(item_manifest_check))
+            else:
+                status.append(item_manifest_check == item_pass_check)
+                     
+    if False in status:
+        return False
+    else:
+        return True
+    
+
+def check_identity_validation(full_name):
+    file_names = [file for file in glob.glob(local_path + '/*.png') if file.__contains__(full_name) and file.__contains__('ca-dl')]
+    image_file_name = file_names[0]
+    with open(image_file_name, "rb") as image_contents:
+        dl_faces = face_client.face.detect_with_stream(image_contents)
+        for face in dl_faces:
+            face_id = face.face_id
+    
+    person_gp_results = face_client.face.identify([face_id], 'e900d236-c402-4902-836e-83cb1c99345b') 
+    confidence = None
+    for result in person_gp_results:
+        for candidate in result.candidates:
+            confidence = candidate.confidence
+    
+    if confidence == None or confidence <= 0.65:
+        return False
+    else:
+        return True
+
+def perform_prediction(image_file_name):
+    with open(image_file_name, "rb") as image_contents:
+        results = predictor.detect_image(project.id, publish_iteration_name, image_contents.read())
+        # Display the results.
+        result_prob = []
+        for prediction in results.predictions:
+            result_prob.append(prediction.probability)
+                
+    return result_prob
+def check_luggage_validation(full_name, df, name):
+    if df.loc[name]['Baggage'] == 'No':
+        return True
+    else:
+        file_names = [file for file in glob.glob(local_path + '/*.png') if file.__contains__(full_name) and file.__contains__('baggage')]
+        image_file_name = file_names[0]
+        probabilities = perform_prediction(image_file_name)
+        for element in probabilities:
+            if element >= 0.65:
+                return False
+            else:
+                pass
+        
+        return True
+
+for name in manifest.index.to_list():
+    full_names = manifest.loc[name]['Passanger Name']
+    full_name = full_names.lower().replace(' ', '-')
+    dob = manifest.loc[name]['DateofBirth']
+    print('Validating details for {}'.format(full_names))
+    manifest.loc[name, ('DoBValidation')] = check_dob_validation(full_name, dob)
+    manifest.loc[name, ('PersonValidation')] = check_identity_validation(full_name)
+    manifest.loc[name, ('LuggageValidation')] = check_luggage_validation(full_name, manifest, name)
+    manifest.loc[name, ('BoardingPassValidation')] = check_boarding_validation(full_name, manifest, checks, name)
+    manifest.loc[name, ('NameValidation')] = check_person_validation(full_name, full_names)
+
+manifest.reset_index().to_csv('Flight Manifest.csv', encoding='utf-8', index=False)

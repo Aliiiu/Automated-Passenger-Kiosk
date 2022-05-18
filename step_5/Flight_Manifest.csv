@@ -1,0 +1,8 @@
+Last Name,Passanger Name,First Name,Sex,Carrier ,Flight No.,Class,From,To,Date,Baggage,Seat,Gate,Boarding Time,Ticket No.,DateofBirth,DoBValidation,PersonValidation,LuggageValidation,NameValidation,BoardingPassValidation
+Kumar,Sameer Kumar,Sameer,M,UA,234,Economy,San Francisco,Chicago,20-Apr-22,YES,34A,G1,10:00 AM PST,34236746,25-Jan-90,True,False,False,True,False
+S.Kumar,Radha S. Kumar,Radha,F,UA,234,Economy,San Francisco,Chicago,20-Apr-22,YES,34B,G1,10:00 AM PST,34236747,05-Mar-94,True,False,False,False,False
+Webb,James Webb,James,M,UA,234,Business,San Francisco,Chicago,20-Apr-22,No,1A,G1,10:00 AM PST,34236748,15-Dec-70,True,False,True,True,True
+Herold,Libby Herold,Libby ,F,UA,234,Business,San Francisco,Chicago,20-Apr-22,No,3D,G1,10:00 AM PST,34236749,10-Feb-96,True,False,True,True,True
+Jackson,James Jackson,James,M,UA,234,Economy,San Francisco,Chicago,20-Apr-22,YES,25B,G1,10:00 AM PST,34236750,12-Oct-56,True,False,False,True,False
+Chauhan,Avkash Chauhan,Avkash,M,UA,234,Economy,San Francisco,Chicago,20-Apr-22,No,20A,G1,10:00 AM PST,34236751,01-Jan-90,True,False,True,False,True
+Salaudeen,Aliu Salaudeen,Aliu,M,UA,234,Economy,San Francisco,Chicago,20-Apr-22,No,2D,G1,10:00 AM PST,34236752,14-Feb-99,True,True,True,True,True
